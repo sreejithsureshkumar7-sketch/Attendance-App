@@ -1,136 +1,94 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Madha Attendance Pro</title>
+  <title>Student Attendance Save</title>
   <link rel="stylesheet" href="style.css"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <h2>🎓 Madha Attendance</h2>
-      <button onclick="showPage('dashboard')">Dashboard</button>
-      <button onclick="showPage('students')">Students</button>
-      <button onclick="showPage('attendance')">Attendance</button>
-      <button onclick="showPage('reports')">Reports</button>
-      <button onclick="showPage('users')">Users</button>
-      <button onclick="logout()">Logout</button>
-    </aside>
+  <main class="container">
+    <section id="loginPage" class="card login">
+      <h1>🎓 Student Details Login</h1>
+      <p>Admin login pannitu students details add pannalam.</p>
+      <input id="username" placeholder="Username"/>
+      <input id="password" type="password" placeholder="Password"/>
+      <button onclick="login()">Login</button>
+      <small>Default: admin / admin123</small>
+    </section>
 
-    <main>
-      <section id="loginPage" class="card login-card">
-        <h1>Login</h1>
-        <select id="loginRole">
-          <option value="admin">Admin</option>
-          <option value="staff">Staff</option>
-          <option value="cr">CR</option>
-          <option value="hod">HOD</option>
-        </select>
-        <input id="loginUsername" placeholder="Username"/>
-        <input id="loginPassword" placeholder="Password" type="password"/>
-        <button onclick="login()">Login</button>
-        <p class="hint">Default Admin: <b>admin</b> / <b>admin123</b></p>
+    <section id="appPage" class="hidden">
+      <div class="top">
+        <h1>Madha Attendance - Student Details</h1>
+        <button class="logout" onclick="logout()">Logout</button>
+      </div>
+
+      <section class="card">
+        <h2>Add Student Details</h2>
+        <div class="grid">
+          <input id="name" placeholder="Student Name"/>
+          <input id="roll" placeholder="Roll No"/>
+          <select id="department">
+            <option value="">Select Department</option>
+            <option>Computer Science</option>
+            <option>BCA</option>
+            <option>B.Com</option>
+            <option>BBA</option>
+            <option>Mathematics</option>
+            <option>English</option>
+          </select>
+          <select id="year">
+            <option value="">Select Year</option>
+            <option>I Year</option>
+            <option>II Year</option>
+            <option>III Year</option>
+          </select>
+          <input id="phone" placeholder="Student Phone"/>
+          <input id="parentPhone" placeholder="Parent Phone with country code e.g. 919876543210"/>
+          <input id="email" placeholder="Email"/>
+          <input id="address" placeholder="Address"/>
+        </div>
+        <button onclick="saveStudent()">Save Student to Firebase</button>
       </section>
 
-      <div id="mainApp" class="hidden">
-        <header class="topbar">
-          <h1 id="pageTitle">Dashboard</h1>
-          <span id="currentUser"></span>
-        </header>
+      <section class="card">
+        <h2>Check Firebase Stored Data</h2>
+        <div class="filters">
+          <select id="filterDept" onchange="loadStudents()">
+            <option value="">All Departments</option>
+            <option>Computer Science</option>
+            <option>BCA</option>
+            <option>B.Com</option>
+            <option>BBA</option>
+            <option>Mathematics</option>
+            <option>English</option>
+          </select>
+          <select id="filterYear" onchange="loadStudents()">
+            <option value="">All Years</option>
+            <option>I Year</option>
+            <option>II Year</option>
+            <option>III Year</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Name</th><th>Roll</th><th>Department</th><th>Year</th><th>Parent</th><th>Notify</th>
+              </tr>
+            </thead>
+            <tbody id="studentTable"></tbody>
+          </table>
+        </div>
+      </section>
 
-        <section id="dashboard" class="page card">
-          <h2>Dashboard</h2>
-          <div class="stats">
-            <div><b id="totalStudents">0</b><span>Students</span></div>
-            <div><b id="totalAttendance">0</b><span>Attendance Records</span></div>
-            <div><b id="avgPercentage">0%</b><span>Average</span></div>
-          </div>
-        </section>
-
-        <section id="students" class="page card hidden">
-          <h2>Add Student</h2>
-          <div class="grid">
-            <input id="sName" placeholder="Student Name"/>
-            <input id="sRoll" placeholder="Roll No"/>
-            <input id="sDept" placeholder="Department"/>
-            <input id="sYear" placeholder="Year"/>
-            <input id="sPhone" placeholder="Phone Number"/>
-            <input id="sParentPhone" placeholder="Parent Phone"/>
-            <input id="sEmail" placeholder="Email"/>
-            <input id="sAddress" placeholder="Address"/>
-            <input id="sProfile" placeholder="Profile Image URL optional"/>
-          </div>
-          <button onclick="addStudent()">Add Student</button>
-
-          <h2>Students List</h2>
-          <div class="filters">
-            <input id="filterDept" placeholder="Filter Department" oninput="renderStudents()"/>
-            <input id="filterYear" placeholder="Filter Year" oninput="renderStudents()"/>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Name</th><th>Roll</th><th>Dept</th><th>Year</th><th>Phone</th><th>Parent</th><th>Action</th></tr></thead>
-              <tbody id="studentsTable"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section id="attendance" class="page card hidden">
-          <h2>Mark Attendance</h2>
-          <div class="grid">
-            <input id="aDate" type="date"/>
-            <input id="aSubject" placeholder="Subject"/>
-            <input id="aDept" placeholder="Department"/>
-            <input id="aYear" placeholder="Year"/>
-          </div>
-          <button onclick="loadAttendanceStudents()">Load Students</button>
-          <form id="attendanceList"></form>
-          <button onclick="saveAttendance()" type="button">Save Attendance</button>
-        </section>
-
-        <section id="reports" class="page card hidden">
-          <h2>Reports</h2>
-          <div class="grid">
-            <input id="rDept" placeholder="Department"/>
-            <input id="rYear" placeholder="Year"/>
-            <input id="rSubject" placeholder="Subject optional"/>
-          </div>
-          <button onclick="generateReport()">Generate Report</button>
-          <button onclick="downloadExcel()">Download Excel</button>
-          <button onclick="downloadPDF()">Download PDF</button>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Name</th><th>Roll</th><th>Present</th><th>Total</th><th>Percentage</th></tr></thead>
-              <tbody id="reportTable"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section id="users" class="page card hidden">
-          <h2>Create Login User</h2>
-          <p class="hint">Admin mattum user create panna mudiyum.</p>
-          <div class="grid">
-            <select id="uRole">
-              <option value="staff">Staff</option>
-              <option value="cr">CR</option>
-              <option value="hod">HOD</option>
-              <option value="admin">Admin</option>
-            </select>
-            <input id="uUsername" placeholder="Username"/>
-            <input id="uPassword" placeholder="Password"/>
-            <input id="uDept" placeholder="Department"/>
-            <input id="uYear" placeholder="Year optional"/>
-            <input id="uSubject" placeholder="Subject optional"/>
-          </div>
-          <button onclick="createUser()">Create User</button>
-          <div id="usersList"></div>
-        </section>
-      </div>
-    </main>
-  </div>
+      <section class="card">
+        <h2>Weekly & Monthly Analytics</h2>
+        <canvas id="analyticsChart"></canvas>
+      </section>
+    </section>
+  </main>
 
   <script type="module" src="firebase.js"></script>
   <script type="module" src="app.js"></script>

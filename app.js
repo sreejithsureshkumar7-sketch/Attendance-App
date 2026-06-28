@@ -1,197 +1,127 @@
 import { db } from "./firebase.js";
-import { collection, addDoc, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-let currentUser = null;
-let students = [];
-let attendanceRecords = [];
-let reportRows = [];
+import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = (id) => document.getElementById(id);
+let chart;
 
-window.showPage = function(page){
-  document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
-  $(page).classList.remove("hidden");
-  $("pageTitle").innerText = page.charAt(0).toUpperCase()+page.slice(1);
-  if(page==="students") loadStudents();
-  if(page==="reports") generateReport();
-  if(page==="dashboard") loadDashboard();
-  if(page==="users") renderUsers();
-}
+window.login = function(){
+  const u = $("username").value.trim();
+  const p = $("password").value.trim();
 
-window.login = async function(){
-  const role=$("loginRole").value, username=$("loginUsername").value.trim(), password=$("loginPassword").value.trim();
-  if(role==="admin" && username==="admin" && password==="admin123"){
-    currentUser={role:"admin",username:"admin"};
-    openApp(); return;
+  if(u === "admin" && p === "admin123"){
+    $("loginPage").classList.add("hidden");
+    $("appPage").classList.remove("hidden");
+    loadStudents();
+  } else {
+    alert("Wrong username or password");
   }
-  const q=query(collection(db,"users"), where("role","==",role), where("username","==",username), where("password","==",password));
-  const snap=await getDocs(q);
-  if(snap.empty){ alert("Invalid login details"); return; }
-  currentUser={id:snap.docs[0].id,...snap.docs[0].data()};
-  openApp();
 }
 
-function openApp(){
-  $("loginPage").classList.add("hidden");
-  $("mainApp").classList.remove("hidden");
-  $("currentUser").innerText = `${currentUser.role.toUpperCase()} - ${currentUser.username}`;
-  showPage("dashboard");
+window.logout = function(){
+  location.reload();
 }
 
-window.logout=function(){ location.reload(); }
-
-function canManageStudents(){ return currentUser && ["admin"].includes(currentUser.role); }
-function canMarkAttendance(){ return currentUser && ["admin","staff"].includes(currentUser.role); }
-function canViewReports(){ return currentUser && ["admin","cr","hod","staff"].includes(currentUser.role); }
-
-window.addStudent = async function(){
-  if(!canManageStudents()){ alert("Only admin can add students"); return; }
-  const data={
-    name:$("sName").value.trim(), roll:$("sRoll").value.trim(), department:$("sDept").value.trim(),
-    year:$("sYear").value.trim(), phone:$("sPhone").value.trim(), parentPhone:$("sParentPhone").value.trim(),
-    email:$("sEmail").value.trim(), address:$("sAddress").value.trim(), profile:$("sProfile").value.trim(),
-    createdAt:new Date().toISOString()
+window.saveStudent = async function(){
+  const student = {
+    name: $("name").value.trim(),
+    roll: $("roll").value.trim(),
+    department: $("department").value,
+    year: $("year").value,
+    phone: $("phone").value.trim(),
+    parentPhone: $("parentPhone").value.trim(),
+    email: $("email").value.trim(),
+    address: $("address").value.trim(),
+    createdAt: new Date().toISOString(),
+    week: getWeekKey(new Date()),
+    month: new Date().toLocaleString("en-US", { month:"short", year:"numeric" })
   };
-  if(!data.name || !data.roll || !data.department || !data.year){ alert("Name, Roll, Department, Year required"); return; }
-  await addDoc(collection(db,"students"),data);
-  alert("Student added");
-  document.querySelectorAll("#students input").forEach(i=>i.value="");
+
+  if(!student.name || !student.roll || !student.department || !student.year || !student.parentPhone){
+    alert("Name, Roll, Department, Year, Parent Phone required");
+    return;
+  }
+
+  await addDoc(collection(db, "students"), student);
+  alert("Student saved in Firebase successfully ✅");
+
+  document.querySelectorAll("#appPage input").forEach(i => i.value = "");
+  $("department").value = "";
+  $("year").value = "";
   loadStudents();
 }
 
-async function loadStudents(){
-  const snap=await getDocs(collection(db,"students"));
-  students=snap.docs.map(d=>({id:d.id,...d.data()}));
-  renderStudents();
-}
+window.loadStudents = async function(){
+  const snap = await getDocs(query(collection(db, "students"), orderBy("createdAt", "desc")));
+  let students = snap.docs.map(d => ({ id:d.id, ...d.data() }));
 
-window.renderStudents=function(){
-  const dept=$("filterDept").value.toLowerCase(), year=$("filterYear").value.toLowerCase();
-  const rows=students.filter(s=>
-    (!dept || (s.department||"").toLowerCase().includes(dept)) &&
-    (!year || (s.year||"").toLowerCase().includes(year))
-  );
-  $("studentsTable").innerHTML=rows.map(s=>`
+  const dept = $("filterDept").value;
+  const year = $("filterYear").value;
+
+  if(dept) students = students.filter(s => s.department === dept);
+  if(year) students = students.filter(s => s.year === year);
+
+  $("studentTable").innerHTML = students.map(s => `
     <tr>
-      <td>${s.name}</td><td>${s.roll}</td><td>${s.department}</td><td>${s.year}</td>
-      <td>${s.phone||"-"}</td><td>${s.parentPhone||"-"}</td>
-      <td><button onclick="deleteStudent('${s.id}')">Delete</button></td>
-    </tr>`).join("");
+      <td>${s.name}</td>
+      <td>${s.roll}</td>
+      <td>${s.department}</td>
+      <td>${s.year}</td>
+      <td>${s.parentPhone}</td>
+      <td>
+        <button class="sms" onclick="sendSMS('${s.parentPhone}','${s.name}')">SMS</button>
+        <button class="wa" onclick="sendWhatsApp('${s.parentPhone}','${s.name}')">WhatsApp</button>
+      </td>
+    </tr>
+  `).join("");
+
+  renderChart(snap.docs.map(d => d.data()));
 }
 
-window.deleteStudent=async function(id){
-  if(!canManageStudents()){ alert("Only admin can delete"); return; }
-  if(confirm("Delete this student?")){
-    await deleteDoc(doc(db,"students",id));
-    loadStudents();
-  }
+window.sendSMS = function(phone, name){
+  const msg = encodeURIComponent(`Dear Parent, ${name} details saved successfully in Madha Attendance App.`);
+  window.location.href = `sms:${phone}?body=${msg}`;
 }
 
-window.loadAttendanceStudents=async function(){
-  if(!canMarkAttendance()){ alert("Only admin/staff can mark attendance"); return; }
-  await loadStudents();
-  const dept=$("aDept").value.trim().toLowerCase(), year=$("aYear").value.trim().toLowerCase();
-  const list=students.filter(s=>(s.department||"").toLowerCase()===dept && (s.year||"").toLowerCase()===year);
-  if(list.length===0){ $("attendanceList").innerHTML="<p>No students found</p>"; return; }
-  $("attendanceList").innerHTML=list.map(s=>`
-    <div class="student-row">
-      <span><b>${s.name}</b> (${s.roll})</span>
-      <select name="${s.id}" data-name="${s.name}" data-roll="${s.roll}">
-        <option value="Present">Present</option>
-        <option value="Absent">Absent</option>
-      </select>
-    </div>`).join("");
+window.sendWhatsApp = function(phone, name){
+  const msg = encodeURIComponent(`Dear Parent, ${name} details saved successfully in Madha Attendance App.`);
+  window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
 }
 
-window.saveAttendance=async function(){
-  if(!canMarkAttendance()){ alert("Only admin/staff can save attendance"); return; }
-  const date=$("aDate").value, subject=$("aSubject").value.trim(), department=$("aDept").value.trim(), year=$("aYear").value.trim();
-  if(!date || !subject || !department || !year){ alert("Date, Subject, Department, Year required"); return; }
-  const selects=[...document.querySelectorAll("#attendanceList select")];
-  if(selects.length===0){ alert("Load students first"); return; }
-  for(const sel of selects){
-    await addDoc(collection(db,"attendance"),{
-      studentId:sel.name, name:sel.dataset.name, roll:sel.dataset.roll,
-      status:sel.value, date, subject, department, year,
-      markedBy:currentUser.username, createdAt:new Date().toISOString()
-    });
-  }
-  alert("Attendance saved successfully");
-  $("attendanceList").innerHTML="";
-  loadDashboard();
+function getWeekKey(date){
+  const first = new Date(date.getFullYear(),0,1);
+  const days = Math.floor((date - first) / (24*60*60*1000));
+  const week = Math.ceil((days + first.getDay() + 1) / 7);
+  return `Week ${week}`;
 }
 
-window.generateReport=async function(){
-  if(!canViewReports()){ alert("No report permission"); return; }
-  await loadStudents();
-  const snap=await getDocs(collection(db,"attendance"));
-  attendanceRecords=snap.docs.map(d=>({id:d.id,...d.data()}));
-  const dept=$("rDept").value.trim().toLowerCase(), year=$("rYear").value.trim().toLowerCase(), subject=$("rSubject").value.trim().toLowerCase();
-  const filteredStudents=students.filter(s=>
-    (!dept || (s.department||"").toLowerCase()===dept) &&
-    (!year || (s.year||"").toLowerCase()===year)
-  );
-  reportRows=filteredStudents.map(s=>{
-    const rec=attendanceRecords.filter(a=>a.studentId===s.id && (!subject || (a.subject||"").toLowerCase()===subject));
-    const present=rec.filter(a=>a.status==="Present").length;
-    const total=rec.length;
-    const percentage=total?Math.round((present/total)*100):0;
-    return {name:s.name, roll:s.roll, present, total, percentage:percentage+"%"};
+function renderChart(allStudents){
+  const weekly = {};
+  const monthly = {};
+
+  allStudents.forEach(s => {
+    weekly[s.week || "Unknown"] = (weekly[s.week || "Unknown"] || 0) + 1;
+    monthly[s.month || "Unknown"] = (monthly[s.month || "Unknown"] || 0) + 1;
   });
-  $("reportTable").innerHTML=reportRows.map(r=>`<tr><td>${r.name}</td><td>${r.roll}</td><td>${r.present}</td><td>${r.total}</td><td>${r.percentage}</td></tr>`).join("");
-}
 
-window.downloadExcel=function(){
-  if(!reportRows.length){ alert("Generate report first"); return; }
-  const ws=XLSX.utils.json_to_sheet(reportRows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Attendance Report");
-  XLSX.writeFile(wb,"attendance-report.xlsx");
-}
+  const labels = [...new Set([...Object.keys(weekly), ...Object.keys(monthly)])].slice(-8);
+  const weeklyData = labels.map(l => weekly[l] || 0);
+  const monthlyData = labels.map(l => monthly[l] || 0);
 
-window.downloadPDF=function(){
-  if(!reportRows.length){ alert("Generate report first"); return; }
-  const { jsPDF } = window.jspdf;
-  const docPdf = new jsPDF();
-  docPdf.text("Attendance Report", 14, 15);
-  let y=25;
-  reportRows.forEach((r,i)=>{
-    docPdf.text(`${i+1}. ${r.name} (${r.roll}) - Present: ${r.present}/${r.total} - ${r.percentage}`,14,y);
-    y+=8;
-    if(y>280){ docPdf.addPage(); y=20; }
+  if(chart) chart.destroy();
+
+  chart = new Chart($("analyticsChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Weekly Students Added", data: weeklyData },
+        { label: "Monthly Students Added", data: monthlyData }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: "top" } },
+      scales: { y: { beginAtZero: true, ticks: { precision:0 } } }
+    }
   });
-  docPdf.save("attendance-report.pdf");
 }
-
-window.createUser=async function(){
-  if(!currentUser || currentUser.role!=="admin"){ alert("Only admin can create users"); return; }
-  const data={
-    role:$("uRole").value, username:$("uUsername").value.trim(), password:$("uPassword").value.trim(),
-    department:$("uDept").value.trim(), year:$("uYear").value.trim(), subject:$("uSubject").value.trim(),
-    createdAt:new Date().toISOString()
-  };
-  if(!data.username || !data.password){ alert("Username and Password required"); return; }
-  await addDoc(collection(db,"users"),data);
-  alert("User created");
-  document.querySelectorAll("#users input").forEach(i=>i.value="");
-  renderUsers();
-}
-
-window.renderUsers=async function(){
-  if(!currentUser || currentUser.role!=="admin"){ $("usersList").innerHTML="<p>Only admin can view users.</p>"; return; }
-  const snap=await getDocs(collection(db,"users"));
-  const users=snap.docs.map(d=>d.data());
-  $("usersList").innerHTML=users.map(u=>`<p class="badge">${u.role} - ${u.username} - ${u.department||""} ${u.subject||""}</p>`).join("");
-}
-
-async function loadDashboard(){
-  await loadStudents();
-  const snap=await getDocs(collection(db,"attendance"));
-  attendanceRecords=snap.docs.map(d=>d.data());
-  $("totalStudents").innerText=students.length;
-  $("totalAttendance").innerText=attendanceRecords.length;
-  const present=attendanceRecords.filter(a=>a.status==="Present").length;
-  $("avgPercentage").innerText=attendanceRecords.length?Math.round((present/attendanceRecords.length)*100)+"%":"0%";
-}
-
-window.addEventListener("load",()=>{ $("aDate").valueAsDate=new Date(); });
