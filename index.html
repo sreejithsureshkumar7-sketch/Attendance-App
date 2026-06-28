@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Madha Attendance Final</title>
+  <title>Madha Attendance</title>
+  <meta name="theme-color" content="#2563eb"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
   <link rel="stylesheet" href="style.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Firebase compat scripts: GitHub Pages-la import error varaadhu -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
@@ -20,7 +22,6 @@
       <div class="brand">🎓</div>
       <h1>Madha Attendance</h1>
       <p>Admin / Staff / CR / HOD login</p>
-
       <select id="loginRole">
         <option value="admin">Admin</option>
         <option value="staff">Staff</option>
@@ -30,7 +31,7 @@
       <input id="loginUsername" placeholder="Username" value="admin"/>
       <input id="loginPassword" type="password" placeholder="Password" value="admin123"/>
       <button onclick="login()">Login</button>
-
+      <button id="installBtn" class="install hidden">Install App</button>
       <small>Default Admin: <b>admin</b> / <b>admin123</b></small>
     </div>
   </section>
@@ -166,7 +167,7 @@
       <div id="notifications" class="page hidden">
         <div class="card">
           <h2>Parent SMS & WhatsApp</h2>
-          <p>Student list-la irukura SMS / WhatsApp button click pannunga. Fully automatic send panna paid SMS API venum.</p>
+          <p>Students list-la SMS / WhatsApp button click pannunga.</p>
         </div>
       </div>
 
