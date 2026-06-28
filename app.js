@@ -1,4 +1,4 @@
-import { db } from "firebase.js";
+import { db } from "./firebase.js";
 import { collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = (id) => document.getElementById(id);
