@@ -3,12 +3,13 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebas
 
 // Firebase Console la irundhu unga config paste pannunga
 const firebaseConfig = {
-  apiKey: "PASTE_YOUR_API_KEY",
-  authDomain: "PASTE_YOUR_PROJECT.firebaseapp.com",
-  projectId: "PASTE_PROJECT_ID",
-  storageBucket: "PASTE_PROJECT.appspot.com",
-  messagingSenderId: "PASTE_SENDER_ID",
-  appId: "PASTE_APP_ID"
+  apiKey: "AIzaSyBqhhRRjQGMdr57Ti67xcYp5oeV2CJJ364",
+  authDomain: "madha-attendance-v2.firebaseapp.com",
+  projectId: "madha-attendance-v2",
+  storageBucket: "madha-attendance-v2.firebasestorage.app",
+  messagingSenderId: "362252012687",
+  appId: "1:362252012687:web:fcb04b7484e0eaf816f4fa",
+  measurementId: "G-8ZMSCW78Y9"
 };
 
 const app = initializeApp(firebaseConfig);
