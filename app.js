@@ -5,12 +5,12 @@ const $ = (id) => document.getElementById(id);
 let chart;
 
 window.login = function(){
-  const u = $("username").value.trim();
-  const p = $("password").value.trim();
+  const u = document.querySelectorAll("input")[0].value.trim();
+  const p = document.querySelectorAll("input")[1].value.trim();
 
   if(u === "admin" && p === "admin123"){
-    $("loginPage").classList.add("hidden");
-    $("appPage").classList.remove("hidden");
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("appPage").classList.remove("hidden");
     loadStudents();
   } else {
     alert("Wrong username or password");
