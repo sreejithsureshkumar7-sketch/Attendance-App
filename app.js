@@ -94,7 +94,7 @@ function toast(msg){
 
 async function login(){
 
-   const role = $("loginRole").value.();
+   const role = $("loginRole").value;
     const username = $("loginUsername").value.trim();
     const password = $("loginPassword").value.trim();
 
@@ -118,19 +118,19 @@ if (user.role === "principal" || user.role === "viceprincipal") {
 // HOD
 if (user.role === "hod") {
     $("currentUser").innerText =
-        HOD - ${user.department};
+        'HOD - ${user.department}';
 }
 
 // Staff
 if (user.role === "staff") {
     $("currentUser").innerText =
-        Staff - ${user.username};
+        'Staff - ${user.username}';
 }
 
 // CR
 if (user.role === "cr") {
     $("currentUser").innerText =
-        CR - ${user.department} (${user.year});
+        'CR - ${user.department} (${user.year})';
 }
 
     $("loginPage").classList.add("hidden");
@@ -174,8 +174,7 @@ showPage("dashboard");
 
 
 }
-  alert("Wrong username or password");
-}
+  
 function logout(){ location.reload(); }
 
 function showPage(page){
