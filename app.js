@@ -131,13 +131,13 @@ async function loadAttendanceStudents(){
 
 async function saveAttendance(){
   try{
-    const date = $("aDate").value, subject = $("aSubject").value.trim(), department = $("aDept").value, year = $("aYear").value;
+    const date = $("aDate").value, subject = $("aSubject").value.trim(), department = $("aDept").value, year = $("aYear").value; const hour = $("aHour").value;
     const rows = [...document.querySelectorAll("#attendanceList select")];
-    if(!date || !subject || !department || !year || rows.length===0){ alert("Load students first"); return; }
+    if(!date || !subject || !hour || !department || !year || rows.length===0){ alert("Load students first"); return; }
     for(const r of rows){
       await db.collection("attendance").add({
         studentId:r.dataset.id, name:r.dataset.name, roll:r.dataset.roll, status:r.value,
-        date, subject, department, year, markedBy: currentUser ? currentUser.username : "admin",
+        date, subject,hour, department, year, markedBy: currentUser ? currentUser.username : "admin",
         createdAt:new Date().toISOString(), week:getWeekKey(new Date(date)),
         month:new Date(date).toLocaleString("en-US",{month:"short",year:"numeric"})
       });
