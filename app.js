@@ -4,6 +4,59 @@ let studentsData = [];
 let reportRows = [];
 let chart = null;
 let deferredPrompt = null;
+const staffAccounts = [
+
+  // Principal
+  { role:"principal", username:"principal", password:"principal123" },
+
+  // Vice Principal
+  { role:"viceprincipal", username:"vp", password:"vp123" },
+
+  // HOD
+  { role:"hod", department:"Computer Science", username:"hodcs", password:"hodcs123" },
+  { role:"hod", department:"BCA", username:"hodbca", password:"hodbca123" },
+  { role:"hod", department:"B.Com", username:"hodbcom", password:"hodbcom123" },
+  { role:"hod", department:"BBA", username:"hodbba", password:"hodbba123" },
+  { role:"hod", department:"Mathematics", username:"hodmath", password:"hodmath123" },
+  { role:"hod", department:"English", username:"hodeng", password:"hodeng123" },
+
+  // Staff 01-25
+  { role:"staff", username:"staff01", password:"staff01" },
+  { role:"staff", username:"staff02", password:"staff02" },
+  ...
+  { role:"staff", username:"staff25", password:"staff25" },
+
+  // Computer Science CR
+  { role:"cr", department:"Computer Science", year:"I Year", username:"cs1cr", password:"cs1cr123" },
+  { role:"cr", department:"Computer Science", year:"II Year", username:"cs2cr", password:"cs2cr123" },
+  { role:"cr", department:"Computer Science", year:"III Year", username:"cs3cr", password:"cs3cr123" },
+
+  // BCA CR
+  { role:"cr", department:"BCA", year:"I Year", username:"bca1cr", password:"bca1cr123" },
+  { role:"cr", department:"BCA", year:"II Year", username:"bca2cr", password:"bca2cr123" },
+  { role:"cr", department:"BCA", year:"III Year", username:"bca3cr", password:"bca3cr123" },
+
+  // B.Com CR
+  { role:"cr", department:"B.Com", year:"I Year", username:"bcom1cr", password:"bcom1cr123" },
+  { role:"cr", department:"B.Com", year:"II Year", username:"bcom2cr", password:"bcom2cr123" },
+  { role:"cr", department:"B.Com", year:"III Year", username:"bcom3cr", password:"bcom3cr123" },
+
+  // BBA CR
+  { role:"cr", department:"BBA", year:"I Year", username:"bba1cr", password:"bba1cr123" },
+  { role:"cr", department:"BBA", year:"II Year", username:"bba2cr", password:"bba2cr123" },
+  { role:"cr", department:"BBA", year:"III Year", username:"bba3cr", password:"bba3cr123" },
+
+  // Mathematics CR
+  { role:"cr", department:"Mathematics", year:"I Year", username:"math1cr", password:"math1cr123" },
+  { role:"cr", department:"Mathematics", year:"II Year", username:"math2cr", password:"math2cr123" },
+  { role:"cr", department:"Mathematics", year:"III Year", username:"math3cr", password:"math3cr123" },
+
+  // English CR
+  { role:"cr", department:"English", year:"I Year", username:"eng1cr", password:"eng1cr123" },
+  { role:"cr", department:"English", year:"II Year", username:"eng2cr", password:"eng2cr123" },
+  { role:"cr", department:"English", year:"III Year", username:"eng3cr", password:"eng3cr123" }
+
+];
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
@@ -40,17 +93,52 @@ function toast(msg){
 }
 
 function login(){
-  const role = $("loginRole").value;
-  const username = $("loginUsername").value.trim();
-  const password = $("loginPassword").value.trim();
-  if(username === "admin" && password === "admin123"){
-    currentUser = { role, username };
+
+    const username = $("loginUsername").value.trim();
+    const password = $("loginPassword").value.trim();
+
+    const user = staffAccounts.find(acc =>
+        acc.username === username &&
+        acc.password === password
+    );
+
+    if(!user){
+        alert("Invalid Username or Password");
+        return;
+    }
+
+    currentUser = user;
+  // Principal & Vice Principal
+if (user.role === "principal" || user.role === "viceprincipal") {
+    // Full Access
+}
+
+// HOD
+if (user.role === "hod") {
+    $("currentUser").innerText =
+        HOD - ${user.department};
+}
+
+// Staff
+if (user.role === "staff") {
+    $("currentUser").innerText =
+        Staff - ${user.username};
+}
+
+// CR
+if (user.role === "cr") {
+    $("currentUser").innerText =
+        CR - ${user.department} (${user.year});
+}
+
     $("loginPage").classList.add("hidden");
     $("appPage").classList.remove("hidden");
-    $("currentUser").innerText = role.toUpperCase() + " - " + username;
+
+    $("currentUser").innerText =
+        user.role.toUpperCase() + " - " + user.username;
+
     showPage("dashboard");
-    return;
-  }
+}
   alert("Wrong username or password");
 }
 function logout(){ location.reload(); }
