@@ -92,7 +92,7 @@ function toast(msg){
   setTimeout(()=>t.style.display="none",2500);
 }
 
-function login(){
+async function login(){
 
     const username = $("loginUsername").value.trim();
     const password = $("loginPassword").value.trim();
