@@ -5,6 +5,11 @@ let reportRows = [];
 let chart = null;
 let deferredPrompt = null;
 const staffAccounts = [
+  {
+  role: "admin",
+  username: "admin",
+  password: "admin123"
+},
 
   // Principal
   { role:"principal", username:"principal", password:"principal123" },
