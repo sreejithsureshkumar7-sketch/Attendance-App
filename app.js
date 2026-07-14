@@ -94,10 +94,12 @@ function toast(msg){
 
 async function login(){
 
+   const role = $("loginRole").value.();
     const username = $("loginUsername").value.trim();
     const password = $("loginPassword").value.trim();
 
     const user = staffAccounts.find(acc =>
+      acc.role === role &&
         acc.username === username &&
         acc.password === password
     );
