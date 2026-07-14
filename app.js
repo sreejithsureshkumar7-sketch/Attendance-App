@@ -136,8 +136,41 @@ if (user.role === "cr") {
 
     $("currentUser").innerText =
         user.role.toUpperCase() + " - " + user.username;
+  currentUser = user;
 
-    showPage("dashboard");
+// 👇 இந்த code-ஐ இங்க paste பண்ணு
+
+$("studentsBtn").style.display = "none";
+$("attendanceBtn").style.display = "none";
+$("reportsBtn").style.display = "none";
+$("notificationBtn").style.display = "none";
+$("settingsBtn").style.display = "none";
+
+if (user.role === "principal" || user.role === "viceprincipal") {
+    $("studentsBtn").style.display = "block";
+    $("attendanceBtn").style.display = "block";
+    $("reportsBtn").style.display = "block";
+    $("notificationBtn").style.display = "block";
+    $("settingsBtn").style.display = "block";
+}
+
+if (user.role === "hod") {
+    $("attendanceBtn").style.display = "block";
+    $("reportsBtn").style.display = "block";
+}
+
+if (user.role === "staff") {
+    $("attendanceBtn").style.display = "block";
+}
+
+if (user.role === "cr") {
+    $("attendanceBtn").style.display = "block";
+}
+
+// 👇 இதுக்கு பிறகு இந்த line இருக்கும்
+showPage("dashboard");
+
+
 }
   alert("Wrong username or password");
 }
