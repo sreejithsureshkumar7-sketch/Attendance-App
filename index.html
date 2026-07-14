@@ -44,6 +44,7 @@
       <button onclick="showPage('attendance')">Attendance</button>
       <button onclick="showPage('reports')">Reports</button>
       <button onclick="showPage('notifications')">Notifications</button>
+      <button id="usersNavBtn" class="hidden" onclick="showPage('users')">Manage Users</button>
       <button onclick="showPage('settings')">Firebase Check</button>
       <button onclick="logout()">Logout</button>
     </aside>
@@ -132,6 +133,16 @@
               <option>I Year</option><option>II Year</option><option>III Year</option>
             </select>
           </div>
+          <div class="card" style="margin:10px 0;padding:12px;">
+            <b>Period (Mani) - select 1 to 5</b>
+            <div id="periodChecks" class="period-checks">
+              <label><input type="checkbox" value="Period 1"/> Period 1</label>
+              <label><input type="checkbox" value="Period 2"/> Period 2</label>
+              <label><input type="checkbox" value="Period 3"/> Period 3</label>
+              <label><input type="checkbox" value="Period 4"/> Period 4</label>
+              <label><input type="checkbox" value="Period 5"/> Period 5</label>
+            </div>
+          </div>
           <button onclick="loadAttendanceStudents()">Load Students</button>
           <div id="attendanceList"></div>
           <button onclick="saveAttendance()">Save Attendance</button>
@@ -152,6 +163,10 @@
               <option>I Year</option><option>II Year</option><option>III Year</option>
             </select>
             <input id="rSubject" oninput="generateReport()" placeholder="Subject optional"/>
+            <select id="rPeriod" onchange="generateReport()">
+              <option value="">All Periods</option>
+              <option>Period 1</option><option>Period 2</option><option>Period 3</option><option>Period 4</option><option>Period 5</option>
+            </select>
           </div>
           <button onclick="downloadCSV()">Download Excel CSV</button>
           <button onclick="window.print()">Print / Save PDF</button>
@@ -168,6 +183,40 @@
         <div class="card">
           <h2>Parent SMS & WhatsApp</h2>
           <p>Students list-la SMS / WhatsApp button click pannunga.</p>
+        </div>
+      </div>
+
+      <div id="users" class="page hidden">
+        <div class="card">
+          <h2>Create Staff / CR / HOD Login</h2>
+          <div class="grid">
+            <select id="uRole">
+              <option value="staff">Staff</option>
+              <option value="cr">CR</option>
+              <option value="hod">HOD</option>
+            </select>
+            <input id="uUsername" placeholder="Username"/>
+            <input id="uPassword" type="password" placeholder="Password"/>
+            <select id="uDept">
+              <option value="">Select Department</option>
+              <option>Computer Science</option><option>BCA</option><option>B.Com</option>
+              <option>BBA</option><option>Mathematics</option><option>English</option>
+            </select>
+            <select id="uYear">
+              <option value="">All Years</option>
+              <option>I Year</option><option>II Year</option><option>III Year</option>
+            </select>
+          </div>
+          <button onclick="saveUser()">Create Login</button>
+        </div>
+        <div class="card">
+          <h2>Existing Logins</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Username</th><th>Role</th><th>Department</th><th>Year</th><th>Action</th></tr></thead>
+              <tbody id="userTable"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 

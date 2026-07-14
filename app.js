@@ -39,30 +39,66 @@ function toast(msg){
   setTimeout(()=>t.style.display="none",2500);
 }
 
-function login(){
+async function login(){
   const role = $("loginRole").value;
   const username = $("loginUsername").value.trim();
   const password = $("loginPassword").value.trim();
-  if(username === "admin" && password === "admin123"){
-    currentUser = { role, username };
-    $("loginPage").classList.add("hidden");
-    $("appPage").classList.remove("hidden");
-    $("currentUser").innerText = role.toUpperCase() + " - " + username;
-    showPage("dashboard");
-    return;
+
+  if(role === "admin"){
+    if(username === "admin" && password === "admin123"){
+      currentUser = { role, username, department:"", year:"" };
+      enterApp();
+      return;
+    }
+    alert("Wrong username or password"); return;
   }
-  alert("Wrong username or password");
+
+  try{
+    const snap = await db.collection("users")
+      .where("username","==",username)
+      .where("password","==",password)
+      .where("role","==",role)
+      .limit(1).get();
+    if(snap.empty){ alert("Wrong username or password"); return; }
+    const u = snap.docs[0].data();
+    currentUser = { role, username, department:u.department || "", year:u.year || "" };
+    enterApp();
+  }catch(err){ alert("Login error: " + err.message); console.error(err); }
 }
+
+function enterApp(){
+  $("loginPage").classList.add("hidden");
+  $("appPage").classList.remove("hidden");
+  $("currentUser").innerText = currentUser.role.toUpperCase() + " - " + currentUser.username +
+    (currentUser.department ? ` (${currentUser.department}${currentUser.year ? ", "+currentUser.year : ""})` : "");
+  $("usersNavBtn").classList.toggle("hidden", currentUser.role !== "admin");
+  showPage("dashboard");
+}
+
 function logout(){ location.reload(); }
+
+function lockDeptYear(deptId, yearId){
+  if(!currentUser) return;
+  const isRestricted = currentUser.role !== "admin" && currentUser.department;
+  if(isRestricted){
+    if($(deptId)){ $(deptId).value = currentUser.department; $(deptId).disabled = true; }
+    if(currentUser.year && $(yearId)){ $(yearId).value = currentUser.year; $(yearId).disabled = true; }
+  } else {
+    if($(deptId)) $(deptId).disabled = false;
+    if($(yearId)) $(yearId).disabled = false;
+  }
+}
 
 function showPage(page){
   document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
   $(page).classList.remove("hidden");
   $("pageTitle").innerText = page.charAt(0).toUpperCase()+page.slice(1);
   if(page==="dashboard") loadDashboard();
-  if(page==="students") loadStudents();
+  if(page==="students"){ lockDeptYear("filterDept","filterYear"); lockDeptYear("sDept","sYear"); loadStudents(); }
+  if(page==="attendance") lockDeptYear("aDept","aYear");
   if(page==="reports") generateReport();
   if(page==="settings") firebaseCheck();
+  if(page==="users") loadUsers();
 }
 
 async function saveStudent(){
@@ -115,12 +151,18 @@ async function loadStudents(){
   }catch(err){ alert("Load students error: " + err.message); console.error(err); }
 }
 
+function getSelectedPeriods(){
+  return [...document.querySelectorAll("#periodChecks input:checked")].map(c=>c.value);
+}
+
 async function loadAttendanceStudents(){
   await loadStudents();
   const dept = $("aDept").value, year = $("aYear").value, subject = $("aSubject").value.trim();
+  const periods = getSelectedPeriods();
   const list = studentsData.filter(s=>s.department===dept && s.year===year);
   if(!$("aDate").value) $("aDate").valueAsDate = new Date();
   if(!dept || !year || !subject){ alert("Date, Subject, Department, Year required"); return; }
+  if(periods.length===0){ alert("Select at least one Period (1 to 5)"); return; }
   if(list.length===0){ $("attendanceList").innerHTML = "<p>No students found.</p>"; return; }
   $("attendanceList").innerHTML = list.map(s=>`
     <div class="row-card"><span><b>${s.name}</b> (${s.roll})</span>
@@ -132,18 +174,23 @@ async function loadAttendanceStudents(){
 async function saveAttendance(){
   try{
     const date = $("aDate").value, subject = $("aSubject").value.trim(), department = $("aDept").value, year = $("aYear").value;
+    const periods = getSelectedPeriods();
     const rows = [...document.querySelectorAll("#attendanceList select")];
     if(!date || !subject || !department || !year || rows.length===0){ alert("Load students first"); return; }
+    if(periods.length===0){ alert("Select at least one Period (1 to 5)"); return; }
     for(const r of rows){
-      await db.collection("attendance").add({
-        studentId:r.dataset.id, name:r.dataset.name, roll:r.dataset.roll, status:r.value,
-        date, subject, department, year, markedBy: currentUser ? currentUser.username : "admin",
-        createdAt:new Date().toISOString(), week:getWeekKey(new Date(date)),
-        month:new Date(date).toLocaleString("en-US",{month:"short",year:"numeric"})
-      });
+      for(const period of periods){
+        await db.collection("attendance").add({
+          studentId:r.dataset.id, name:r.dataset.name, roll:r.dataset.roll, status:r.value,
+          date, subject, department, year, period, markedBy: currentUser ? currentUser.username : "admin",
+          createdAt:new Date().toISOString(), week:getWeekKey(new Date(date)),
+          month:new Date(date).toLocaleString("en-US",{month:"short",year:"numeric"})
+        });
+      }
     }
-    toast("Attendance saved ✅");
+    toast(`Attendance saved for ${periods.length} period(s) ✅`);
     $("attendanceList").innerHTML="";
+    document.querySelectorAll("#periodChecks input").forEach(c=>c.checked=false);
     loadDashboard();
   }catch(err){ alert("Attendance save error: " + err.message); console.error(err); }
 }
@@ -167,11 +214,13 @@ async function generateReport(){
   let students = sSnap.docs.map(d=>({id:d.id,...d.data()}));
   const attendance = aSnap.docs.map(d=>d.data());
   const dept = $("rDept").value, year = $("rYear").value, subject = $("rSubject").value.toLowerCase();
+  const period = $("rPeriod") ? $("rPeriod").value : "";
   if(dept) students = students.filter(s=>s.department===dept);
   if(year) students = students.filter(s=>s.year===year);
   reportRows = students.map(s=>{
     let rec = attendance.filter(a=>a.studentId===s.id);
     if(subject) rec = rec.filter(a=>(a.subject||"").toLowerCase().includes(subject));
+    if(period) rec = rec.filter(a=>a.period===period);
     const present = rec.filter(a=>a.status==="Present").length;
     const absent = rec.filter(a=>a.status==="Absent").length;
     const total = rec.length;
@@ -205,6 +254,37 @@ async function firebaseCheck(){
   const aSnap = await db.collection("attendance").limit(20).get();
   const data = {students:sSnap.docs.map(d=>({id:d.id,...d.data()})), attendance:aSnap.docs.map(d=>({id:d.id,...d.data()}))};
   $("firebaseOutput").innerText = JSON.stringify(data, null, 2);
+}
+
+async function saveUser(){
+  try{
+    const role = $("uRole").value, username = $("uUsername").value.trim(), password = $("uPassword").value.trim();
+    const department = $("uDept").value, year = $("uYear").value;
+    if(!username || !password || !department){ alert("Username, Password, Department required"); return; }
+    const existing = await db.collection("users").where("username","==",username).limit(1).get();
+    if(!existing.empty){ alert("Username already exists"); return; }
+    await db.collection("users").add({ role, username, password, department, year, createdAt:new Date().toISOString() });
+    toast("Login created ✅");
+    $("uUsername").value=""; $("uPassword").value=""; $("uDept").value=""; $("uYear").value="";
+    loadUsers();
+  }catch(err){ alert("Create login error: " + err.message); console.error(err); }
+}
+
+async function loadUsers(){
+  try{
+    const snap = await db.collection("users").orderBy("createdAt","desc").get();
+    const users = snap.docs.map(d=>({id:d.id,...d.data()}));
+    $("userTable").innerHTML = users.map(u=>`
+      <tr><td>${u.username}</td><td>${u.role.toUpperCase()}</td><td>${u.department}</td><td>${u.year||"All"}</td>
+      <td><button onclick="deleteUser('${u.id}')">Delete</button></td></tr>`).join("");
+  }catch(err){ alert("Load logins error: " + err.message); console.error(err); }
+}
+
+async function deleteUser(id){
+  if(!confirm("Delete this login?")) return;
+  await db.collection("users").doc(id).delete();
+  toast("Login deleted");
+  loadUsers();
 }
 
 function getWeekKey(date){
