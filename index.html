@@ -39,13 +39,19 @@
   <section id="appPage" class="app hidden">
     <aside class="sidebar">
       <h2>🎓 Madha<br/>Attendance</h2>
-      <button onclick="showPage('dashboard')">Dashboard</button>
-      <button onclick="showPage('students')">Students</button>
-      <button onclick="showPage('attendance')">Attendance</button>
-      <button onclick="showPage('reports')">Reports</button>
-      <button onclick="showPage('notifications')">Notifications</button>
-      <button onclick="showPage('settings')">Firebase Check</button>
-      <button onclick="logout()">Logout</button>
+     <button id="dashboardBtn" onclick="showPage('dashboard')">Dashboard</button>
+
+<button id="studentsBtn" onclick="showPage('students')">Students</button>
+
+<button id="attendanceBtn" onclick="showPage('attendance')">Attendance</button>
+
+<button id="reportsBtn" onclick="showPage('reports')">Reports</button>
+
+<button id="notificationBtn" onclick="showPage('notifications')">Notification</button>
+
+<button id="settingsBtn" onclick="showPage('settings')">Firebase Check</button>
+
+<button id="logoutBtn" onclick="logout()">Logout</button>
     </aside>
 
     <main class="main">
