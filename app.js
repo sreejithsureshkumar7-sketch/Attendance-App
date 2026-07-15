@@ -71,8 +71,22 @@ function enterApp(){
   $("appPage").classList.remove("hidden");
   $("currentUser").innerText = currentUser.role.toUpperCase() + " - " + currentUser.username +
     (currentUser.department ? ` (${currentUser.department}${currentUser.year ? ", "+currentUser.year : ""})` : "");
-  $("usersNavBtn").classList.toggle("hidden", currentUser.role !== "admin");
-  showPage("dashboard");
+  applyRoleAccess();
+}
+
+function applyRoleAccess(){
+  const role = currentUser.role;
+  const access = {
+    admin:  { navDashboard:1, navStudents:1, navAttendance:1, navReports:1, navNotifications:1, navSettings:1, usersNavBtn:1, landing:"dashboard" },
+    hod:    { navDashboard:1, navStudents:1, navAttendance:1, navReports:1, navNotifications:1, navSettings:1, usersNavBtn:0, landing:"dashboard" },
+    staff:  { navDashboard:0, navStudents:0, navAttendance:1, navReports:0, navNotifications:0, navSettings:0, usersNavBtn:0, landing:"attendance" },
+    cr:     { navDashboard:0, navStudents:1, navAttendance:0, navReports:0, navNotifications:0, navSettings:0, usersNavBtn:0, landing:"students" }
+  };
+  const rules = access[role] || access.staff;
+  ["navDashboard","navStudents","navAttendance","navReports","navNotifications","navSettings","usersNavBtn"].forEach(id=>{
+    $(id).classList.toggle("hidden", !rules[id]);
+  });
+  showPage(rules.landing);
 }
 
 function logout(){ location.reload(); }
