@@ -1,11 +1,11 @@
 const firebaseConfig = {
-  apiKey: "AIzaSyBqhhRRjQGMdr57Ti67xcYp5oeV2CJJ364",
-  authDomain: "madha-attendance-v2.firebaseapp.com",
-  projectId: "madha-attendance-v2",
-  storageBucket: "madha-attendance-v2.firebasestorage.app",
-  messagingSenderId: "362252012687",
-  appId: "1:362252012687:web:fcb04b7484e0eaf816f4fa",
-  measurementId: "G-8ZMSCW78Y9"
+  apiKey: "AIzaSyBquQHabdQyG-rytLwx6vZLhv1ZWd2o2hU",
+  authDomain: "college-attendance-syste-62e89.firebaseapp.com",
+  projectId: "college-attendance-syste-62e89",
+  storageBucket: "college-attendance-syste-62e89.firebasestorage.app",
+  messagingSenderId: "246869170235",
+  appId: "1:246869170235:web:b080aa757d2b0ba079e41e",
+  measurementId: "G-VELRXP6J3R"
 };
 
 
