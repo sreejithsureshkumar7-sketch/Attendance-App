@@ -18,6 +18,8 @@ window.addEventListener("beforeinstallprompt", (e) => {
   if (btn) btn.classList.remove("hidden");
 });
 
+document.addEventListener("DOMContentLoaded", prefillLastLogin);
+
 window.addEventListener("load", () => {
   const btn = $("installBtn");
   if (btn) {
@@ -47,6 +49,7 @@ async function login(){
   if(role === "admin"){
     if(username === "admin" && password === "admin123"){
       currentUser = { role, username, department:"", year:"" };
+      rememberLogin(role, username, password);
       enterApp();
       return;
     }
@@ -62,8 +65,24 @@ async function login(){
     if(snap.empty){ alert("Wrong username or password"); return; }
     const u = snap.docs[0].data();
     currentUser = { role, username, department:u.department || "", year:u.year || "" };
+    rememberLogin(role, username, password);
     enterApp();
   }catch(err){ alert("Login error: " + err.message); console.error(err); }
+}
+
+function rememberLogin(role, username, password){
+  localStorage.setItem("lastLogin", JSON.stringify({role, username, password}));
+}
+
+function prefillLastLogin(){
+  const saved = localStorage.getItem("lastLogin");
+  if(!saved) return;
+  try{
+    const {role, username, password} = JSON.parse(saved);
+    if($("loginRole")) $("loginRole").value = role;
+    if($("loginUsername")) $("loginUsername").value = username;
+    if($("loginPassword")) $("loginPassword").value = password;
+  }catch(e){ /* ignore corrupt data */ }
 }
 
 function enterApp(){
@@ -92,15 +111,8 @@ function applyRoleAccess(){
 function logout(){ location.reload(); }
 
 function lockDeptYear(deptId, yearId){
-  if(!currentUser) return;
-  const isRestricted = currentUser.role !== "admin" && currentUser.department;
-  if(isRestricted){
-    if($(deptId)){ $(deptId).value = currentUser.department; $(deptId).disabled = true; }
-    if(currentUser.year && $(yearId)){ $(yearId).value = currentUser.year; $(yearId).disabled = true; }
-  } else {
-    if($(deptId)) $(deptId).disabled = false;
-    if($(yearId)) $(yearId).disabled = false;
-  }
+  if($(deptId)) $(deptId).disabled = false;
+  if($(yearId)) $(yearId).disabled = false;
 }
 
 function showPage(page){
